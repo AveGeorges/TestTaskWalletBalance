@@ -3,14 +3,11 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import UUID, Column, DateTime, ForeignKey, Numeric
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy.types import Enum as SQLAlchemyEnum
 
-from app.schemas.operation import OperationType
-
-
-class Base(DeclarativeBase):
-    pass
+from app.db.base import Base
+from app.domain.enums import OperationType
 
 
 def _utcnow() -> datetime:

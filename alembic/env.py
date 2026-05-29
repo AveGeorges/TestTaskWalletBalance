@@ -4,7 +4,8 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from app.core.config import settings
-from app.models.models import Base, Operation, Wallet
+from app.db.base import Base
+from app.models.models import Operation, Wallet  # noqa: F401 — регистрация таблиц в metadata
 
 config = context.config
 

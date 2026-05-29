@@ -1,12 +1,10 @@
 from decimal import Decimal
-from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from app.domain.enums import OperationType
 
-class OperationType(str, Enum):
-    DEPOSIT = "DEPOSIT"
-    WITHDRAW = "WITHDRAW"
+__all__ = ["OperationCreate", "OperationType"]
 
 
 class OperationCreate(BaseModel):

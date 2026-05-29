@@ -82,9 +82,70 @@ docker compose run --rm --entrypoint sh app -c "alembic upgrade head && pytest -
 
 Покрытие: health, GET/POST wallets, 404/400/422, конкурентный withdraw.
 
-## Линтер (PEP8) — `pyproject.toml` + Ruff
+## Архитектура: доменные ошибки
 
-В корне лежит **`pyproject.toml`** — конфигурация инструментов Python
+Сервисы выбрасывают доменные исключения (`WalletNotFound`, `InsufficientFunds`). HTTP-коды и JSON задаёт слой API.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as wallets.py
+    participant Svc as WalletService
+    participant Handler as exception_handlers
+
+    Client->>API: GET /wallets/{uuid}
+    API->>Svc: get_wallet_balance()
+    Svc-->>API: raise WalletNotFound
+    API-->>Handler: DomainError
+    Handler-->>Client: 404 + detail.code
+```
+
+## Слои проекта
+
+| Слой | Путь | Назначение |
+|------|------|------------|
+| Domain | `app/domain/` | enum, исключения (без FastAPI/SQLAlchemy) |
+| DB | `app/db/base.py` | `Base` для ORM |
+| Models | `app/models/` | таблицы SQLAlchemy |
+| Schemas | `app/schemas/` | Pydantic DTO для API |
+| Repositories | `app/repositories/` | запросы к БД (SQLAlchemy) |
+| Services | `app/services/` | бизнес-операции, оркестрация |
+| API | `app/api/` | HTTP, exception handlers |
+
+`OperationType` определён в `app/domain/enums.py` и используется в ORM и Pydantic-схемах.
+
+## Репозитории (фаза 3)
+
+SQL вынесен в `WalletRepository` и `OperationRepository`. Сервисы не строят `select`/`update` — только вызывают репозитории и кидают доменные исключения.
+
+```text
+API → Service → Repository → ORM / PostgreSQL
+```
+
+## Зависимости
+
+Единый источник правды: **`pyproject.toml`** + зафиксированные версии в **`uv.lock`**.
+
+Локально:
+
+```bash
+uv sync --group dev
+uv run alembic upgrade head
+uv run pytest -q
+uv run ruff check .
+```
+
+Обновить lock после смены зависимостей:
+
+```bash
+uv lock
+```
+
+Docker собирает окружение через `uv sync --frozen --group dev`.
+
+## Линтер (PEP8) — Ruff
+
+Конфиг Ruff — в **`pyproject.toml`**, секция `[tool.ruff]`.
 
 Проверка стиля в Docker:
 
