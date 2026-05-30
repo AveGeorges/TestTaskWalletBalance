@@ -78,7 +78,7 @@ docker compose run --rm --entrypoint sh app -c "python -m scripts.seed"
 ```bash
 docker compose run --rm --entrypoint sh app -c "alembic upgrade head && pytest -q"
 ```
-**ОСТОРОЖНО! Выполнение команды очистит таблицы wallets, operations в БД.**
+**ОСТОРОЖНО!** Сейчас тесты идут в **ту же** БД `wallet_api`, что и dev (`TRUNCATE` в `conftest`). См. раздел **Roadmap** ниже — отдельная test-БД и CI.
 
 Покрытие: health, GET/POST wallets, 404/400/422, конкурентный withdraw.
 
@@ -145,8 +145,6 @@ Docker собирает окружение через `uv sync --frozen --group 
 
 ## Observability (OpenTelemetry, фазы 1–6)
 
-Опциональный prod-like стек в отдельных контейнерах:
-
 ```bash
 docker compose -f compose.yaml -f compose.observability.yaml up --build
 ```
@@ -203,3 +201,23 @@ docker compose run --rm --entrypoint sh app -c "ruff check . && ruff format --ch
 Реализация: `app/services/operation_service.py`.
 
 Проверка: `tests/test_concurrency.py` — 10 параллельных WITHDRAW по 200 при балансе 1000.
+
+## Roadmap — планируется к добавлению
+
+Следующие улучшения **ещё не реализованы**; зафиксированы как направление развития после сдачи ТЗ.
+
+### Безопасность и API hardening
+
+| Задача | Зачем |
+|--------|--------|
+| **Идемпотентность** (`Idempotency-Key` на POST `/operation`) | Повтор запроса при сетевом сбое не создаёт двойное списание/пополнение |
+| **Авторизация** (API key / JWT / mTLS) | Доступ к кошелькам только для доверенных клиентов |
+| **Защита по заголовкам** (CORS, `X-Request-ID`, опционально HSTS / security headers middleware) | Предсказуемый контракт клиента и базовая защита веб-слоя |
+| **Rate limiting** (по IP / API key, slowapi или Redis) | Защита от злоупотреблений и перегрузки |
+
+### Инфраструктура и качество (из ревью архитектуры)
+
+| Задача | Зачем | Статус |
+|--------|--------|--------|
+| **Отдельная test-БД** (`wallet_api_test`, отдельный volume / compose profile) | Сейчас pytest через Docker использует ту же PostgreSQL, что и dev; TRUNCATE в `conftest` может затронуть dev-данные | Планируется |
+| **CI (GitHub Actions)** | Автоматически на каждый push/PR: `ruff check`, `pytest`, `alembic upgrade head` в Docker | Планируется |
