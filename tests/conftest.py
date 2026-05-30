@@ -1,3 +1,7 @@
+import os
+
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+
 from decimal import Decimal
 
 import pytest
@@ -8,7 +12,6 @@ from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
-# Engine создаём до импорта app, чтобы не привязываться к чужому event loop
 test_engine = create_async_engine(settings.database_url, poolclass=NullPool)
 TestSessionLocal = async_sessionmaker(
     bind=test_engine,

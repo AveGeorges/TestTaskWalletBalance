@@ -143,6 +143,40 @@ uv lock
 
 Docker собирает окружение через `uv sync --frozen --group dev`.
 
+## Observability (OpenTelemetry, фазы 1–6)
+
+Опциональный prod-like стек в отдельных контейнерах:
+
+```bash
+docker compose -f compose.yaml -f compose.observability.yaml up --build
+```
+
+| URL | Сервис |
+|-----|--------|
+| http://localhost:8000/docs | Wallet API |
+| http://localhost:3000 | Grafana (admin / admin) |
+| http://localhost:9090 | Prometheus |
+
+**Tempo** — хранилище трейсов (waterfall запроса: HTTP → service → SQL).  
+**Grafana Alloy** — агент: собирает JSON-логи из stdout контейнеров → Loki.
+
+Приложение шлёт **OTLP** только в **OTel Collector** (`4317`). Collector маршрутизирует в Tempo / Prometheus / Loki.
+
+Подробнее и контракт для нескольких сервисов: [docs/observability.md](docs/observability.md).
+
+```mermaid
+flowchart LR
+    app[wallet-api] -->|OTLP| col[otel-collector]
+    app -->|JSON stdout| alloy[Grafana Alloy]
+    col --> tempo[Tempo]
+    col --> prom[Prometheus]
+    col --> loki[Loki]
+    alloy --> loki
+    prom --> grafana[Grafana]
+    loki --> grafana
+    tempo --> grafana
+```
+
 ## Линтер (PEP8) — Ruff
 
 Конфиг Ruff — в **`pyproject.toml`**, секция `[tool.ruff]`.

@@ -1,0 +1,166 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+      "id": 1,
+      "title": "HTTP request rate (total RPS)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_duration_milliseconds_count{exported_job=\"wallet-api\"}[5m]))",
+          "legendFormat": "RPS",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ms"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+      "id": 2,
+      "title": "HTTP latency p95",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{exported_job=\"wallet-api\"}[5m])) by (le))",
+          "legendFormat": "p95",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ms"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+      "id": 5,
+      "title": "HTTP latency p50",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_duration_milliseconds_bucket{exported_job=\"wallet-api\"}[5m])) by (le))",
+          "legendFormat": "p50",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 6,
+      "title": "HTTP RPS by status code",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (http_status_code) (rate(http_server_duration_milliseconds_count{exported_job=\"wallet-api\"}[5m]))",
+          "legendFormat": "{{http_status_code}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 8},
+      "id": 7,
+      "title": "HTTP 4xx RPS",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_duration_milliseconds_count{exported_job=\"wallet-api\",http_status_code=~\"4..\"}[5m]))",
+          "legendFormat": "4xx RPS",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 8},
+      "id": 3,
+      "title": "HTTP 5xx RPS",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_duration_milliseconds_count{exported_job=\"wallet-api\",http_status_code=~\"5..\"}[5m])) or vector(0)",
+          "legendFormat": "5xx RPS",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 16},
+      "id": 8,
+      "title": "Total HTTP requests (1h)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(increase(http_server_duration_milliseconds_count{exported_job=\"wallet-api\"}[1h]))",
+          "legendFormat": "requests",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 16},
+      "id": 9,
+      "title": "Active HTTP requests",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (http_method) (http_server_active_requests{exported_job=\"wallet-api\"})",
+          "legendFormat": "{{http_method}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 16},
+      "id": 10,
+      "title": "DB connection pool",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "db_client_connections_usage{exported_job=\"wallet-api\"}",
+          "legendFormat": "{{state}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 22},
+      "id": 4,
+      "title": "Recent logs (wallet-api)",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "{service=\"wallet-api\"}",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["wallet-api", "otel"],
+  "templating": {"list": []},
+  "time": {"from": "now-15m", "to": "now"},
+  "title": "Wallet API — RED",
+  "uid": "wallet-api-red",
+  "version": 2
+}
